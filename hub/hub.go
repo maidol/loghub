@@ -24,32 +24,31 @@ type Config struct {
 		AccessKeySecret string
 	}
 	MessageChannelBufferSize int
-	LogsBufferSize           int
-	Topics                   []string
 	LogsBufferSize4Logstore  int
+	LogsBufferSize           int
 	Logstores                []string
+	Topics                   []string
 }
 
 type Loghub struct {
-	Name string
 	*Config
-	consumer                 *cluster.Consumer
-	logproject               *sls.LogProject
-	logstores                map[string]*sls.LogStore
-	messages                 chan *sarama.ConsumerMessage
-	messageChannelBufferSize int
+	consumer     *cluster.Consumer
+	logproject   *sls.LogProject
+	logstoresMap map[string]*sls.LogStore
+
 	m                        sync.RWMutex
-	stop                     chan int
+	messageChannelBufferSize int
+	messages                 chan *sarama.ConsumerMessage
+
+	stop chan int
 
 	mlogstoreLogsBuffer     sync.RWMutex
 	logsBuffer4Logstore     map[string](chan *topicLog) // by logstore
 	logsBufferSize4Logstore int
 
-	mlogsBuffer sync.RWMutex
-	// logsBuffer     map[string](chan *topicLog) // by topic and logstore
-	logsBuffer     map[string]map[string]chan *topicLog // by topic and logstore
+	mlogsBuffer    sync.RWMutex
+	logsBuffer     map[string]map[string]chan *topicLog // by logstore and topic
 	logsBufferSize int
-	topics         []string
 }
 
 type topicLog struct {
@@ -69,36 +68,37 @@ func New(cfg *Config, consumer *cluster.Consumer) *Loghub {
 	lbls := map[string](chan *topicLog){}
 
 	lbr := map[string]map[string](chan *topicLog){}
-	// lbr := map[string](chan *topicLog){}
-	// for _, tp := range cfg.Topics {
-	// 	lbr[tp] = make(chan *topicLog, cfg.LogsBufferSize)
-	// }
 
 	lh := &Loghub{
-		Config:                   cfg,
-		consumer:                 consumer,
-		logproject:               logproject,
+		Config:       cfg,
+		consumer:     consumer,
+		logproject:   logproject,
+		logstoresMap: map[string]*sls.LogStore{},
+
 		messages:                 make(chan *sarama.ConsumerMessage, cfg.MessageChannelBufferSize),
 		messageChannelBufferSize: cfg.MessageChannelBufferSize,
+
 		stop: make(chan int),
 
 		logsBuffer4Logstore:     lbls,
 		logsBufferSize4Logstore: cfg.LogsBufferSize4Logstore,
-		logstores:               map[string]*sls.LogStore{},
 
 		logsBuffer:     lbr,
 		logsBufferSize: cfg.LogsBufferSize,
-		topics:         cfg.Topics,
 	}
 
 	return lh
 }
 
 func (l *Loghub) Run() {
+	// 分配消息
+	go l.dispatch()
+
 	// lss, err := l.logproject.ListLogStore()
 	// if err != nil {
 	// 	panic(err)
 	// }
+
 	// 开启日志库
 	for _, lsn := range l.Logstores {
 		_, err := l.getLogstore(lsn)
@@ -106,58 +106,26 @@ func (l *Loghub) Run() {
 			fmt.Printf("Loghub Start failed (logstoreName=%s, logprojectName=%s). err: %v\n", lsn, l.LogProject.Name, err)
 			panic(err)
 		}
-		// 分配到topic
+		// 分配消息到topic
 		go l.dispatchToTopic(lsn)
-		for _, tp := range l.topics {
-			fmt.Printf("start processTopicMsg ============ (topics=%s,logstore=%v)\n", tp, lsn)
-			go l.processTopicMsg(lsn, tp)
+		for _, tp := range l.Topics {
+			go l.processTopicMsg(tp, lsn)
 		}
 	}
+}
 
-	// 分配消息
-	go l.dispatch()
+func (l *Loghub) Stop() {
+	l.stop <- 0
 }
 
 func (l *Loghub) Input() chan<- *sarama.ConsumerMessage {
 	return l.messages
 }
 
-// dispatchToTopic
-func (l *Loghub) dispatchToTopic(logstoreName string) {
-	fmt.Printf("(logstoreName=%s) start dispatchToTopic===========\n", logstoreName)
-	// TODO: 处理消息, 分配到不同的topic
-	channelBuffer := l.getLogstoreLogsBufferChannel(logstoreName)
-	for {
-		select {
-		case log := <-channelBuffer:
-			fmt.Printf("dispatchToTopic===========log.topic=%v\n", log.topic)
-			logsCBTopic := l.getLogsCBTopic(log.topic, logstoreName)
-			fmt.Printf("logsCBTopic==============len=%d,cap=%d\n", len(logsCBTopic), cap(logsCBTopic))
-			logsCBTopic <- log
-		}
-	}
-}
-
-func (l *Loghub) getLogsCBTopic(topic string, logstoreName string) chan *topicLog {
-	l.mlogsBuffer.Lock()
-	defer l.mlogsBuffer.Unlock()
-	logsCB, ok := l.logsBuffer[logstoreName]
-	if !ok || logsCB == nil {
-		logsCB = map[string]chan *topicLog{}
-		l.logsBuffer[logstoreName] = logsCB
-	}
-	logsCBTopic, ok := logsCB[topic]
-	if !ok || logsCBTopic == nil {
-		logsCBTopic = make(chan *topicLog, l.logsBufferSize)
-		logsCB[topic] = logsCBTopic
-	}
-	fmt.Printf("===============getLogsCBTopic===============%#v\n", l.logsBuffer)
-	return logsCBTopic
-}
-
 // dispatch
 // 分配消息
 func (l *Loghub) dispatch() error {
+	fmt.Printf("============= start dispatch (logproject=%s) ===========\n", l.LogProject.Name)
 	// TODO: logproject, logstore, topic
 	// 指定logproject和logstore进行分配
 	for {
@@ -198,24 +166,58 @@ func (l *Loghub) dispatch() error {
 			select {
 			// TODO: 考虑优化处理, lblsc如果满了的情况
 			case lblsc <- log:
-				fmt.Printf("dispatch===========%s\n", msg.Key)
+				fmt.Printf("[dispatch]===========%s\n", msg.Key)
 			}
+		case <-l.stop:
+			return nil
 		}
 	}
 }
 
-func (l *Loghub) Stop() {
-	l.stop <- 0
+// dispatchToTopic
+func (l *Loghub) dispatchToTopic(logstoreName string) {
+	fmt.Printf("============= start dispatchToTopic (logstoreName=%s) ===========\n", logstoreName)
+	var logsCBTopic chan *topicLog
+	// TODO: 处理消息, 分配到不同的topic
+	channelBuffer := l.getLogstoreLogsBufferChannel(logstoreName)
+	for {
+		select {
+		case log := <-channelBuffer:
+			fmt.Printf("[dispatchToTopic]===========logstore=%v, log.topic=%v\n", logstoreName, log.topic)
+			if logsCBTopic == nil {
+				logsCBTopic = l.getLogsCBTopic(log.topic, logstoreName)
+			}
+			fmt.Printf("[dispatchToTopic logsCBTopic]==============len=%d,cap=%d\n", len(logsCBTopic), cap(logsCBTopic))
+			logsCBTopic <- log
+		}
+	}
+}
+
+func (l *Loghub) getLogsCBTopic(topic string, logstoreName string) chan *topicLog {
+	l.mlogsBuffer.Lock()
+	defer l.mlogsBuffer.Unlock()
+	logsCB, ok := l.logsBuffer[logstoreName]
+	if !ok || logsCB == nil {
+		logsCB = map[string]chan *topicLog{}
+		l.logsBuffer[logstoreName] = logsCB
+	}
+	logsCBTopic, ok := logsCB[topic]
+	if !ok || logsCBTopic == nil {
+		logsCBTopic = make(chan *topicLog, l.logsBufferSize)
+		logsCB[topic] = logsCBTopic
+	}
+	return logsCBTopic
 }
 
 func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
-	// cb := l.logsBuffer[logstoreName][topic]
+	fmt.Printf("============ start processTopicMsg (topic=%s,logstore=%v) ============\n", topic, logstoreName)
 	cb := l.getLogsCBTopic(topic, logstoreName)
-	fmt.Printf("===================================================let=%d,cap=%d", len(cb), cap(cb))
+	fmt.Printf("============ start processTopicMsg (logsTopicChannelBuffer len=%d,cap=%d) ============\n", len(cb), cap(cb))
 	for {
 		select {
 		case log := <-cb:
-			fmt.Println("==========================processTopicMsg=========================")
+			fmt.Printf("[processTopicMsg]=================key:%s\n", log.cmsg.Key)
+			// TODO: 优化, 累积一定的log记录再提交(附加超时提交策略)
 			loggroup := generateLoggroupByTopicLog(log, "")
 			logstore, err := l.getLogstore(logstoreName)
 			if err != nil {
@@ -228,6 +230,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 				continue
 			}
 			l.consumer.MarkOffset(log.cmsg, "loghub.processTopicMsg")
+			fmt.Printf("[processTopicMsg success]=================key:%s\n", log.cmsg.Key)
 		}
 	}
 }
@@ -235,7 +238,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 func (l *Loghub) getLogstore(logstoreName string) (*sls.LogStore, error) {
 	var logstore *sls.LogStore
 	l.m.RLock()
-	logstore = l.logstores[logstoreName]
+	logstore = l.logstoresMap[logstoreName]
 	l.m.RUnlock()
 	if logstore != nil {
 		return logstore, nil
@@ -258,7 +261,7 @@ func (l *Loghub) getLogstore(logstoreName string) (*sls.LogStore, error) {
 				} else {
 					fmt.Println("CreateLogStore success")
 					l.m.Lock()
-					l.logstores[logstoreName] = logstore
+					l.logstoresMap[logstoreName] = logstore
 					l.m.Unlock()
 					return logstore, nil
 				}
@@ -266,7 +269,7 @@ func (l *Loghub) getLogstore(logstoreName string) (*sls.LogStore, error) {
 		} else {
 			fmt.Printf("GetLogStore success, retry:%d, name: %s, ttl: %d, shardCount: %d, createTime: %d, lastModifyTime: %d\n", retry_times, logstore.Name, logstore.TTL, logstore.ShardCount, logstore.CreateTime, logstore.LastModifyTime)
 			l.m.Lock()
-			l.logstores[logstoreName] = logstore
+			l.logstoresMap[logstoreName] = logstore
 			l.m.Unlock()
 			return logstore, nil
 		}

@@ -14,12 +14,13 @@ import (
 var loghub *hub.Loghub
 
 func init() {
-	fmt.Println("init kafka consumer")
+	fmt.Println("init...")
 
 	// loghub
 	lhcfg := &hub.Config{
-		LogsBufferSize4Logstore: 10,
-		LogsBufferSize:          10,
+		MessageChannelBufferSize: 256,
+		LogsBufferSize4Logstore:  10,
+		LogsBufferSize:           10,
 	}
 	flag.StringVar(&lhcfg.LogProject.Name, "projectname", "epaper", "loghub project name")
 	flag.StringVar(&lhcfg.LogProject.Endpoint, "endpoint", "cn-beijing.log.aliyuncs.com", "loghub endpoint")
@@ -36,8 +37,8 @@ func init() {
 	lhcfg.Logstores = []string{"gateway"}
 	lhcfg.Topics = mqcfg.Topics
 
-	fmt.Printf("load mqcfg: %#v\n", mqcfg)
-	fmt.Printf("load lhcfg: %#v\n", lhcfg)
+	fmt.Printf("load mqcfg: %+v\n", mqcfg)
+	fmt.Printf("load lhcfg: %+v\n", lhcfg)
 
 	consumer := consume.New(mqcfg)
 	loghub = hub.New(lhcfg, consumer)

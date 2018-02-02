@@ -228,6 +228,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 		case log := <-cb:
 			fmt.Printf("[processTopicMsg]=================key:%s\n", log.cmsg.Key)
 			// TODO: 优化, 累积一定的log记录再提交(附加超时提交策略)
+			// generateLoggroupByTopicLog 定义参数source
 			loggroup := generateLoggroupByTopicLog(log, "")
 			logstore, err := l.getLogstore(logstoreName)
 			if err != nil {
@@ -328,7 +329,8 @@ func generateLog(data map[string]string) (*topicLog, error) {
 			Value: proto.String(v),
 		})
 	}
-	t, e := time.Parse("2006-01-02T15:04:05+08:00", data["@timestamp"])
+	local, _ := time.LoadLocation("Local")
+	t, e := time.ParseInLocation("2006-01-02T15:04:05+08:00", data["@timestamp"], local)
 	if e != nil {
 		t = time.Now()
 	}

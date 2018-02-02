@@ -15,10 +15,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 )
 
-func init() {
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
-}
-
 var loghub *Loghub
 
 type Config struct {
@@ -33,6 +29,9 @@ type Config struct {
 	LogsBufferSize           int
 	Logstores                []string
 	Topics                   []string
+
+	// http
+	MaxIdleConnsPerHost int
 }
 
 type Loghub struct {
@@ -63,6 +62,12 @@ type topicLog struct {
 }
 
 func New(cfg *Config, consumer *cluster.Consumer) *Loghub {
+	// 设置MaxIdleConnsPerHost
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = cfg.MaxIdleConnsPerHost
+	if cfg.MaxIdleConnsPerHost <= 0 {
+		http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 10
+	}
+
 	logproject := &sls.LogProject{
 		Name:            cfg.LogProject.Name,
 		Endpoint:        cfg.LogProject.Endpoint,

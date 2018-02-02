@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +14,10 @@ import (
 	cluster "github.com/bsm/sarama-cluster"
 	"github.com/gogo/protobuf/proto"
 )
+
+func init() {
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 100
+}
 
 var loghub *Loghub
 

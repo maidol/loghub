@@ -24,6 +24,7 @@ func init() {
 func New(mqcfg *configs.MqConfig) *cluster.Consumer {
 	clusterCfg := cluster.NewConfig()
 
+	// TODO: 优化net配置
 	clusterCfg.Net.SASL.Enable = true
 	clusterCfg.Net.SASL.User = mqcfg.Ak
 	clusterCfg.Net.SASL.Password = mqcfg.Password

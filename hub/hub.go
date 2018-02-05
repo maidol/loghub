@@ -135,7 +135,7 @@ func (l *Loghub) Input() chan<- *sarama.ConsumerMessage {
 // dispatch
 // 分配消息
 func (l *Loghub) dispatch() error {
-	fmt.Printf("============= start dispatch (logproject=%s) ===========\n", l.LogProject.Name)
+	fmt.Printf("============ start dispatchToLogstore (logproject=%s) ===========\n", l.LogProject.Name)
 	// TODO: logproject, logstore, topic
 	// 指定logproject和logstore进行分配
 	for {
@@ -176,7 +176,7 @@ func (l *Loghub) dispatch() error {
 			select {
 			// TODO: 考虑优化处理, lblsc如果满了的情况
 			case lblsc <- log:
-				fmt.Printf("[dispatch]===========%s\n", msg.Key)
+				fmt.Printf("[dispatchToLogstore] %s\n", msg.Key)
 			}
 		case <-l.stop:
 			return nil
@@ -186,18 +186,17 @@ func (l *Loghub) dispatch() error {
 
 // dispatchToTopic
 func (l *Loghub) dispatchToTopic(logstoreName string) {
-	fmt.Printf("============= start dispatchToTopic (logstoreName=%s) ===========\n", logstoreName)
+	fmt.Printf("============ start dispatchToTopic (logstoreName=%s) ===========\n", logstoreName)
 	var logsCBTopic chan *topicLog
 	// TODO: 处理消息, 分配到不同的topic
 	channelBuffer := l.getLogstoreLogsBufferChannel(logstoreName)
 	for {
 		select {
 		case log := <-channelBuffer:
-			fmt.Printf("[dispatchToTopic]===========logstore=%v, log.topic=%v\n", logstoreName, log.topic)
 			if logsCBTopic == nil {
 				logsCBTopic = l.getLogsCBTopic(log.topic, logstoreName)
 			}
-			fmt.Printf("[dispatchToTopic logsCBTopic]==============len=%d,cap=%d\n", len(logsCBTopic), cap(logsCBTopic))
+			fmt.Printf("[dispatchToTopic] %s, logstore=%v, log.topic=%v, logsCBTopic: len=%d,cap=%d\n", log.cmsg.Key, logstoreName, log.topic, len(logsCBTopic), cap(logsCBTopic))
 			logsCBTopic <- log
 		}
 	}
@@ -220,13 +219,12 @@ func (l *Loghub) getLogsCBTopic(topic string, logstoreName string) chan *topicLo
 }
 
 func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
-	fmt.Printf("============ start processTopicMsg (topic=%s,logstore=%v) ============\n", topic, logstoreName)
 	cb := l.getLogsCBTopic(topic, logstoreName)
-	fmt.Printf("============ start processTopicMsg (logsTopicChannelBuffer len=%d,cap=%d) ============\n", len(cb), cap(cb))
+	fmt.Printf("============ start processTopicMsg (topic=%s,logstore=%v) (logsTopicChannelBuffer len=%d,cap=%d) ============\n", topic, logstoreName, len(cb), cap(cb))
 	for {
 		select {
 		case log := <-cb:
-			fmt.Printf("[processTopicMsg]=================key:%s\n", log.cmsg.Key)
+			fmt.Printf("[processTopicMsg] key:%s\n", log.cmsg.Key)
 			// TODO: 优化, 累积一定的log记录再提交(附加超时提交策略)
 			// generateLoggroupByTopicLog 是否需要定义参数source
 			loggroup := generateLoggroupByTopicLog(log, "")
@@ -241,7 +239,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 				continue
 			}
 			l.consumer.MarkOffset(log.cmsg, "loghub.processTopicMsg")
-			fmt.Printf("[processTopicMsg success]=================key:%s\n", log.cmsg.Key)
+			fmt.Printf("[processTopicMsg success] key:%s\n", log.cmsg.Key)
 		}
 	}
 }

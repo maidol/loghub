@@ -12,3 +12,10 @@
 - 多消费者, 多logproject
 - 根据kafka消息, 动态创建logproject, logstore
 - 支持默认的logproject, logstore
+
+## 运行
+------
+```bash
+go run main.go -ak xxx -password xxx -kafkaConfigPath mq.test.json -accesskeyid xxx -accesskeysec
+ret xxx -endpoint xxx
+```

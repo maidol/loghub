@@ -1,0 +1,8 @@
+{
+  "topics": ["testxway"],
+  "servers": ["kafka-ons-internet.aliyun.com:8080"],
+  "ak": "xxx",
+  "password": "xxx",
+  "consumerId": "CID_testxway_001",
+  "cert_file": "ca-cert"
+}

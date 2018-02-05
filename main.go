@@ -23,18 +23,34 @@ func init() {
 		LogsBufferSize:           10,
 	}
 	flag.StringVar(&lhcfg.LogProject.Name, "projectname", "epaper", "loghub project name")
+	// cn-beijing-intranet.log.aliyuncs.com
+	// cn-beijing.log.aliyuncs.com
 	flag.StringVar(&lhcfg.LogProject.Endpoint, "endpoint", "cn-beijing.log.aliyuncs.com", "loghub endpoint")
 	flag.StringVar(&lhcfg.LogProject.AccessKeyID, "accesskeyid", "", "loghub AccessKeyID")
 	flag.StringVar(&lhcfg.LogProject.AccessKeySecret, "accesskeysecret", "", "loghub AccessKeySecret")
 
+	var logstore string
+	flag.StringVar(&logstore, "logstore", "gateway", "log store")
+
 	// mq
 	mqcfg := &configs.MqConfig{}
-	configs.LoadJsonConfig(mqcfg, "mq.json")
-	flag.StringVar(&mqcfg.Ak, "ak", "", "access key")
-	flag.StringVar(&mqcfg.Password, "password", "", "password")
+	var kafkaConfigPath string
+	var ak string
+	var pwd string
+	flag.StringVar(&kafkaConfigPath, "kafkaConfigPath", "mq.json", "kafka config path")
+	flag.StringVar(&ak, "ak", "", "access key")
+	flag.StringVar(&pwd, "password", "", "password")
 	flag.Parse()
 
-	lhcfg.Logstores = []string{"gateway"}
+	configs.LoadJsonConfig(mqcfg, kafkaConfigPath)
+	if ak != "" {
+		mqcfg.Ak = ak
+	}
+	if pwd != "" {
+		mqcfg.Password = pwd
+	}
+
+	lhcfg.Logstores = []string{logstore}
 	lhcfg.Topics = mqcfg.Topics
 
 	fmt.Printf("============ load mqcfg: %+v ============\n", mqcfg)

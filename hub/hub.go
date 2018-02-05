@@ -228,7 +228,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 		case log := <-cb:
 			fmt.Printf("[processTopicMsg]=================key:%s\n", log.cmsg.Key)
 			// TODO: 优化, 累积一定的log记录再提交(附加超时提交策略)
-			// generateLoggroupByTopicLog 定义参数source
+			// generateLoggroupByTopicLog 是否需要定义参数source
 			loggroup := generateLoggroupByTopicLog(log, "")
 			logstore, err := l.getLogstore(logstoreName)
 			if err != nil {

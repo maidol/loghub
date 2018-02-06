@@ -16,6 +16,5 @@
 ## 运行
 ------
 ```bash
-go run main.go -ak xxx -password xxx -kafkaConfigPath mq.test.json -accesskeyid xxx -accesskeysec
-ret xxx -endpoint xxx
+go run main.go -kafkaAK xxx -kafkaPassword xxx -kafkaConfigPath mq.test.json -logaccesskeyid xxx -logaccesskeysecret xxx -logproject epaper -logendpoint cn-beijing.log.aliyuncs.com
 ```

@@ -22,12 +22,12 @@ func init() {
 		LogsBufferSize4Logstore:  10,
 		LogsBufferSize:           10,
 	}
-	flag.StringVar(&lhcfg.LogProject.Name, "projectname", "epaper", "loghub project name")
+	flag.StringVar(&lhcfg.LogProject.Name, "logproject", "epaper", "loghub project")
 	// cn-beijing-intranet.log.aliyuncs.com
 	// cn-beijing.log.aliyuncs.com
-	flag.StringVar(&lhcfg.LogProject.Endpoint, "endpoint", "cn-beijing.log.aliyuncs.com", "loghub endpoint")
-	flag.StringVar(&lhcfg.LogProject.AccessKeyID, "accesskeyid", "", "loghub AccessKeyID")
-	flag.StringVar(&lhcfg.LogProject.AccessKeySecret, "accesskeysecret", "", "loghub AccessKeySecret")
+	flag.StringVar(&lhcfg.LogProject.Endpoint, "logendpoint", "cn-beijing.log.aliyuncs.com", "loghub endpoint")
+	flag.StringVar(&lhcfg.LogProject.AccessKeyID, "logaccesskeyid", "", "loghub AccessKeyID")
+	flag.StringVar(&lhcfg.LogProject.AccessKeySecret, "logaccesskeysecret", "", "loghub AccessKeySecret")
 
 	var logstore string
 	flag.StringVar(&logstore, "logstore", "gateway", "log store")
@@ -38,8 +38,8 @@ func init() {
 	var ak string
 	var pwd string
 	flag.StringVar(&kafkaConfigPath, "kafkaConfigPath", "mq.json", "kafka config path")
-	flag.StringVar(&ak, "ak", "", "access key")
-	flag.StringVar(&pwd, "password", "", "password")
+	flag.StringVar(&ak, "kafkaAK", "", "kafka access key")
+	flag.StringVar(&pwd, "kafkaPassword", "", "kafka access password")
 	flag.Parse()
 
 	configs.LoadJsonConfig(mqcfg, kafkaConfigPath)

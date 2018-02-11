@@ -25,6 +25,7 @@ func New(mqcfg *configs.MqConfig) *cluster.Consumer {
 	clusterCfg := cluster.NewConfig()
 
 	// TODO: 优化net配置
+	// clusterCfg.Net.KeepAlive = 10 * time.Second
 	clusterCfg.Net.SASL.Enable = true
 	clusterCfg.Net.SASL.User = mqcfg.Ak
 	clusterCfg.Net.SASL.Password = mqcfg.Password
@@ -44,6 +45,8 @@ func New(mqcfg *configs.MqConfig) *cluster.Consumer {
 	}
 
 	clusterCfg.Net.TLS.Enable = true
+	// TODO: 优化获取策略, 提高吞吐量, clusterCfg.Consumer.Fetch
+	// clusterCfg.Consumer.Fetch.Default
 	clusterCfg.Consumer.Return.Errors = true
 	clusterCfg.Consumer.Offsets.Initial = sarama.OffsetOldest
 	clusterCfg.Group.Return.Notifications = true
@@ -75,7 +78,7 @@ func consume(loghub *hub.Loghub) {
 		select {
 		case msg, more := <-consumer.Messages():
 			if more {
-				fmt.Printf("kafka consumer msg: (topic:%s) (partition:%d) (offset:%d) (%s): (%s)\n", msg.Topic, msg.Partition, msg.Offset, msg.Key, msg.Value)
+				// fmt.Printf("kafka consumer msg: (topic:%s) (partition:%d) (offset:%d) (%s): (%s)\n", msg.Topic, msg.Partition, msg.Offset, msg.Key, msg.Value)
 				loghub.Input() <- msg
 				// consumer.MarkOffset(msg, "completed") // mark message as processed
 				// fmt.Println("kafka consumer HighWaterMarks", consumer.HighWaterMarks())

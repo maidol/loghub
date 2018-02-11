@@ -14,7 +14,7 @@ import (
 var loghub *hub.Loghub
 
 func init() {
-	fmt.Println("============ init... ============")
+	fmt.Println("[init...]")
 
 	// loghub
 	lhcfg := &hub.Config{
@@ -53,8 +53,8 @@ func init() {
 	lhcfg.Logstores = []string{logstore}
 	lhcfg.Topics = mqcfg.Topics
 
-	fmt.Printf("============ load mqcfg: %+v ============\n", mqcfg)
-	fmt.Printf("============ load lhcfg: %+v ============\n", lhcfg)
+	fmt.Printf("[load mqcfg] %+v\n", mqcfg)
+	fmt.Printf("[load lhcfg] %+v\n", lhcfg)
 
 	consumer := consume.New(mqcfg)
 	loghub = hub.New(lhcfg, consumer)

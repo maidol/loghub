@@ -1,0 +1,8 @@
+{
+  "topics": ["prevxway"],
+  "servers": ["kafka-cn-beijing.aliyun.com:8080"],
+  "ak": "xxx",
+  "password": "xxx",
+  "consumerId": "CID_xway_001",
+  "cert_file": "ca-cert"
+}

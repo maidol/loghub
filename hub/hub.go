@@ -240,7 +240,7 @@ func (l *Loghub) processTopicMsg(topic string, logstoreName string) error {
 			}
 			l.consumer.MarkOffset(log.cmsg, "loghub.processTopicMsg")
 			// TODO: 记录处理成功的key
-			fmt.Printf("[process topic messages success] msg_key: %s\n", log.cmsg.Key)
+			fmt.Printf("[process topic messages success] topic: %s, msg_key: %s\n", topic, log.cmsg.Key)
 		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"loghub/hub"
 	"os"
+	"time"
 
 	"github.com/Shopify/sarama"
 	cluster "github.com/bsm/sarama-cluster"
@@ -25,7 +26,7 @@ func New(mqcfg *configs.MqConfig) *cluster.Consumer {
 	clusterCfg := cluster.NewConfig()
 
 	// TODO: 优化net配置
-	// clusterCfg.Net.KeepAlive = 10 * time.Second
+	clusterCfg.Net.KeepAlive = 60 * time.Second
 	clusterCfg.Net.SASL.Enable = true
 	clusterCfg.Net.SASL.User = mqcfg.Ak
 	clusterCfg.Net.SASL.Password = mqcfg.Password

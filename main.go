@@ -29,8 +29,10 @@ func init() {
 	flag.StringVar(&lhcfg.LogProject.AccessKeyID, "logaccesskeyid", "", "loghub AccessKeyID")
 	flag.StringVar(&lhcfg.LogProject.AccessKeySecret, "logaccesskeysecret", "", "loghub AccessKeySecret")
 
-	var logstore string
-	flag.StringVar(&logstore, "logstore", "gateway", "log store")
+	// var logstore string
+	// flag.StringVar(&logstore, "logstore", "gateway", "log store")
+	var logstores listOptions
+	flag.Var(&logstores, "logstore", "add logstore")
 
 	// mq
 	mqcfg := &configs.MqConfig{}
@@ -50,7 +52,8 @@ func init() {
 		mqcfg.Password = pwd
 	}
 
-	lhcfg.Logstores = []string{logstore}
+	// lhcfg.Logstores = []string{logstore}
+	lhcfg.Logstores = []string(logstores)
 	lhcfg.Topics = mqcfg.Topics
 
 	fmt.Printf("[load mqcfg] %+v\n", mqcfg)
@@ -59,6 +62,16 @@ func init() {
 	consumer := consume.New(mqcfg)
 	loghub = hub.New(lhcfg, consumer)
 	loghub.Run()
+}
+
+type listOptions []string
+
+func (o *listOptions) String() string {
+	return fmt.Sprint(*o)
+}
+func (o *listOptions) Set(value string) error {
+	*o = append(*o, value)
+	return nil
 }
 
 func main() {

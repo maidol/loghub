@@ -1,0 +1,8 @@
+{
+  "logprojects": [
+    {
+      "name": "epaper",
+      "logstores": ["gateway", "cw-logger"]
+    }
+  ]
+}

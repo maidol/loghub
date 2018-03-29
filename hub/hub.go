@@ -166,6 +166,19 @@ func (l *Loghub) dispatch() error {
 				fmt.Println(err)
 				continue
 			}
+			// 判断logstore的有效性
+			isValidLogstore := false
+			for _, v := range l.Logstores {
+				if logstoreName == v {
+					isValidLogstore = true
+					break
+				}
+			}
+			if !isValidLogstore {
+				fmt.Printf("无效的logstore: %s , 不存在于l.Logstores列表\n", logstoreName)
+				l.consumer.MarkOffset(msg, "不存在于loghub.Logstores列表")
+				continue
+			}
 			// logstore, err := l.getLogstore(logstoreName)
 			// if err != nil {
 			// 	fmt.Println(err)

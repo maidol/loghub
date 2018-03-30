@@ -175,8 +175,9 @@ func (l *Loghub) dispatch() error {
 				}
 			}
 			if !isValidLogstore {
+				// 跳过没有订阅的logstore消息
 				fmt.Printf("无效的logstore: %s , 不存在于l.Logstores列表\n", logstoreName)
-				l.consumer.MarkOffset(msg, "不存在于loghub.Logstores列表")
+				// l.consumer.MarkOffset(msg, "不存在于loghub.Logstores列表")
 				continue
 			}
 			// logstore, err := l.getLogstore(logstoreName)

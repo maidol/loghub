@@ -38,10 +38,12 @@ func init() {
 	var kafkaConfigPath string
 	var ak string
 	var pwd string
+	var consumerId string
 	var topics listOptions
 	flag.StringVar(&kafkaConfigPath, "kafkaConfigPath", "mq.json", "kafka config path")
 	flag.StringVar(&ak, "kafkaAK", "", "kafka access key")
 	flag.StringVar(&pwd, "kafkaPassword", "", "kafka access password")
+	flag.StringVar(&consumerId, "kafkaConsumerId", "", "kafka consumerId")
 	flag.Var(&topics, "topic", "add topic")
 
 	flag.Parse()
@@ -52,6 +54,9 @@ func init() {
 	}
 	if pwd != "" {
 		mqcfg.Password = pwd
+	}
+	if consumerId != "" {
+		mqcfg.ConsumerId = consumerId
 	}
 	if topics != nil && len(topics) > 0 {
 		mqcfg.Topics = []string(topics)

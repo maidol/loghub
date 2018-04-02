@@ -25,5 +25,11 @@
 --------
 
 ```bash
-go run main.go -kafkaAK xxx -kafkaPassword xxx -kafkaConfigPath mq.test.json -logaccesskeyid xxx -logaccesskeysecret xxx -logstore gateway -logproject epaper -logendpoint cn-beijing.log.aliyuncs.com
+go run main.go -kafkaAK xxx -kafkaPassword xxx -kafkaConfigPath mq.test.json \
+-topic testxway \
+-topic cw-logger-test \
+-logaccesskeyid xxx -logaccesskeysecret xxx -logproject epaper \
+-logstore gateway \
+-logstore cw-auth \
+-logendpoint cn-beijing.log.aliyuncs.com
 ```

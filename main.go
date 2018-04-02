@@ -28,7 +28,6 @@ func init() {
 	flag.StringVar(&lhcfg.LogProject.Endpoint, "logendpoint", "cn-beijing.log.aliyuncs.com", "loghub endpoint")
 	flag.StringVar(&lhcfg.LogProject.AccessKeyID, "logaccesskeyid", "", "loghub AccessKeyID")
 	flag.StringVar(&lhcfg.LogProject.AccessKeySecret, "logaccesskeysecret", "", "loghub AccessKeySecret")
-
 	// var logstore string
 	// flag.StringVar(&logstore, "logstore", "gateway", "log store")
 	var logstores listOptions
@@ -39,9 +38,12 @@ func init() {
 	var kafkaConfigPath string
 	var ak string
 	var pwd string
+	var topics listOptions
 	flag.StringVar(&kafkaConfigPath, "kafkaConfigPath", "mq.json", "kafka config path")
 	flag.StringVar(&ak, "kafkaAK", "", "kafka access key")
 	flag.StringVar(&pwd, "kafkaPassword", "", "kafka access password")
+	flag.Var(&topics, "topic", "add topic")
+
 	flag.Parse()
 
 	configs.LoadJsonConfig(mqcfg, kafkaConfigPath)
@@ -50,6 +52,9 @@ func init() {
 	}
 	if pwd != "" {
 		mqcfg.Password = pwd
+	}
+	if topics != nil && len(topics) > 0 {
+		mqcfg.Topics = []string(topics)
 	}
 
 	// lhcfg.Logstores = []string{logstore}
